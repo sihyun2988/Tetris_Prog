@@ -85,7 +85,7 @@ Matrix *Matrix::clip(int top, int left, int bottom, int right) {
 void Matrix::paste(const Matrix *obj, int top, int left) {
   for (int y = 0; y < obj->dy; y++)
     for (int x = 0; x < obj->dx; x++) {
-      if ((top + y >= 0) && (left + x >= 0) &&  (top + y < dy) && (left + x < dx))
+      if ((top + y >= 0) && (left + x >= 0) && (top + y < dy) && (left + x < dx))
 	      array[y + top][x + left] = obj->array[y][x];
       else {
 	      cerr << "invalid matrix range\n";

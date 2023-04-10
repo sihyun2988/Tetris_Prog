@@ -197,15 +197,10 @@ int arrayScreen[ARRAY_DY][ARRAY_DX] = {
   { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },  
 };
 
-int arrayBlk[3][3] = {
-  { 0, 1, 0 },
-  { 1, 1, 1 },
-  { 0, 0, 0 },
-};
-
 int main(int argc, char *argv[]) {
   char key;
   int blkType;
+  int idxBlockDegree;
   int top = 0, left = 4;
 
   /*
@@ -220,17 +215,18 @@ int main(int argc, char *argv[]) {
 
   //테트리스 블럭 초기화
   Matrix *setofBlockObjects[MAX_BLK_TYPES][MAX_BLK_DEGREES];
-  for (int i=0; i<MAX_BLK_TYPES; i++){
-    for (int j=0; j<MAX_BLK_DEGREES; j++){
+  for (int i=0; i<MAX_BLK_TYPES; i++){ //0~6
+    for (int j=0; j<MAX_BLK_DEGREES; j++){ //0~3
       int col = 3; int row = 3;
-      if (i==0) {col=2; row = 2;}
+      if (i==0) {col=2; row=2;}
       else if (i==6) {col=4; row=4;}
-      setofBlockObjects[i][j] = new Matrix(setOfBlockArrays[i*3 + j], col, row);
+      setofBlockObjects[i][j] = new Matrix(setOfBlockArrays[i*4 + j], col, row);
     }
   }
 
   //난수를 이용한 블럭타입 선택
   srand((unsigned int)time(NULL));
+  while (0) {
   blkType = rand() % MAX_BLK_TYPES;
 
   Matrix *iScreen = new Matrix((int *) arrayScreen, ARRAY_DY, ARRAY_DX);
@@ -241,7 +237,7 @@ int main(int argc, char *argv[]) {
   delete tempBlk;
 
   Matrix *oScreen = new Matrix(iScreen);
-  oScreen->paste(tempBlk, top, left);
+  oScreen->paste(tempBlk2, top, left);
   delete tempBlk2;
   drawScreen(oScreen, SCREEN_DW); //테트리스 블럭출현
   delete oScreen;
@@ -251,7 +247,10 @@ int main(int argc, char *argv[]) {
       case 'a': left--; break;
       case 'd': left++; break;
       case 's': top++; break;
-      case 'w': break;
+      case 'w': 
+        idxBlockDegree = (idxBlockDegree + 1) % 4;
+        currBlk = setofBlockObjects[blkType][idxBlockDegree];
+        break;
       case ' ': break;
       default: cout << "wrong key input" << endl;
     }
@@ -276,16 +275,18 @@ int main(int argc, char *argv[]) {
     delete oScreen;
   }
   
+
+  delete iScreen;
+  //delete currBlk;
+  //delete tempBlk;
+  //delete tempBlk2;
+  //delete oScreen;
+  //블럭 객체 free
   for (int i=0; i<MAX_BLK_TYPES; i++){
     for (int j=0; j<MAX_BLK_DEGREES; j++){
       delete setofBlockObjects[i][j];
     }
-  }
-  delete iScreen;
-  delete currBlk;
-  //delete tempBlk;
-  //delete tempBlk2;
-  //delete oScreen;
+  }  
 
   cout << "(nAlloc, nFree) = (" << Matrix::get_nAlloc() << ',' << Matrix::get_nFree() << ")" << endl;  
   cout << "Program terminated!" << endl;
