@@ -145,8 +145,8 @@ void drawScreen(Matrix *screen, int wall_depth)
   int dw = wall_depth;
   int **array = screen->get_array();
 
-  for (int y = 0; y < dy - dw + 1; y++) {
-    for (int x = dw - 1; x < dx - dw + 1; x++) {
+  for (int y = 0; y < dy - dw + 3; y++) {
+    for (int x = dw - 3; x < dx - dw + 3; x++) {
       if (array[y][x] == 0)
 	      cout << "□ ";
       else if (array[y][x] == 1)
@@ -178,23 +178,25 @@ void drawScreen(Matrix *screen, int wall_depth)
 
 #define SCREEN_DY  10
 #define SCREEN_DX  10
-#define SCREEN_DW  1
+#define SCREEN_DW  3
 
 #define ARRAY_DY (SCREEN_DY + SCREEN_DW)
 #define ARRAY_DX (SCREEN_DX + 2*SCREEN_DW)
 
 int arrayScreen[ARRAY_DY][ARRAY_DX] = {
-  { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-  { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-  { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-  { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-  { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-  { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-  { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-  { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-  { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-  { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },  
+  { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 },
+  { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 },
+  { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 },
+  { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 },
+  { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 },
+  { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 },
+  { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 },
+  { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 },
+  { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 },
+  { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 },
+  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },  
+  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },  
+  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }
 };
 
 int main(int argc, char *argv[]) {
@@ -226,7 +228,6 @@ int main(int argc, char *argv[]) {
 
   //난수를 이용한 블럭타입 선택
   srand((unsigned int)time(NULL));
-  while (0) {
   blkType = rand() % MAX_BLK_TYPES;
 
   Matrix *iScreen = new Matrix((int *) arrayScreen, ARRAY_DY, ARRAY_DX);
@@ -244,14 +245,34 @@ int main(int argc, char *argv[]) {
 
   while ((key = getch()) != 'q') {
     switch (key) {
-      case 'a': left--; break;
+      case 'a': left--; break; //tempblk free했는데 어케 left?
       case 'd': left++; break;
       case 's': top++; break;
       case 'w': 
         idxBlockDegree = (idxBlockDegree + 1) % 4;
         currBlk = setofBlockObjects[blkType][idxBlockDegree];
         break;
-      case ' ': break;
+      case ' ': 
+        cout <<"space" <<endl;
+        while(1){
+          top++;
+          tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
+          tempBlk2 = tempBlk->add(currBlk);
+          cout <<"top++" <<endl;
+          if (tempBlk2->anyGreaterThan(1)){
+            cout <<"greater" <<endl;
+            top--;
+            tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
+            tempBlk2 = tempBlk->add(currBlk);
+            oScreen->paste(tempBlk2, top, left);
+            //delete tempBlk2;
+            break;
+          }
+        }
+        blkType = rand() % MAX_BLK_TYPES;
+        currBlk = setofBlockObjects[blkType][0];
+        top=0;
+        break;
       default: cout << "wrong key input" << endl;
     }
     tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
@@ -260,8 +281,9 @@ int main(int argc, char *argv[]) {
       switch(key){
         case 'a': left++; break;
         case 'd': left--; break;
+        case 's': top--; break;
         case 'w': top--; break;
-        case ' ': break;
+        case ' ': top--; break;
       }
       tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
       tempBlk2 = tempBlk->add(currBlk);
