@@ -98,6 +98,7 @@ int T0D1[] = { 1, 1, 1, 1, -1 };
 int T0D2[] = { 1, 1, 1, 1, -1 };
 int T0D3[] = { 1, 1, 1, 1, -1 };
 
+//    ㅗ
 int T1D0[] = { 0, 1, 0, 1, 1, 1, 0, 0, 0, -1 };
 int T1D1[] = { 0, 1, 0, 0, 1, 1, 0, 1, 0, -1 };
 int T1D2[] = { 0, 0, 0, 1, 1, 1, 0, 1, 0, -1 };
@@ -171,7 +172,38 @@ void drawScreen(Matrix *screen, int wall_depth)
     cout << endl;
   }
 }
-  
+
+Matrix *deleteFullLines(Matrix *screen, int top, int wall_depth){
+  int dy = screen->get_dy();
+  int dx = screen->get_dx();
+  int **array = screen->get_array();
+  int dw = wall_depth;
+  //현재 떨어진 블록의 top부터 밑으로 내려가면서 FullLine check
+  for(int i=top; i<dy-dw; i++){
+    for(int j=dw; j<dx-dw; j++){
+      if(array[i][j] == 0){
+        cout << "안채워진 줄 발견" << endl;
+        break;
+      }
+      //다 채워진 줄 나오면 그 윗줄을 아랫줄에 덮어쓰기
+      if(j == dx - dw -1){//해당 줄의 끝까지 갔는지
+        for(int k=i; k >= 0; k--){
+          for(int p=dw; p<dx-dw; p++){
+            if(k==0) {
+              if(p=dx-dw-1) break;
+              array[k][j] = 0; 
+              cout<<"0행 0으로"<<endl;}
+            cout<<"delete" <<endl;
+            cout<<k<<p<<endl;
+            array[k][p] = array[k-1][p];
+          }
+        }
+      }
+    } 
+  }
+  return screen;
+}
+
 /**************************************************************/
 /******************** Tetris Main Loop ************************/
 /**************************************************************/
@@ -199,11 +231,13 @@ int arrayScreen[ARRAY_DY][ARRAY_DX] = {
   { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }
 };
 
+
+
 int main(int argc, char *argv[]) {
   char key;
   int blkType;
   int idxBlockDegree;
-  int top = 0, left = 4;
+  int top = 0, left = 5;
 
   /*
   Matrix A((int*) arrayBlk, 3, 3);
@@ -230,6 +264,7 @@ int main(int argc, char *argv[]) {
   srand((unsigned int)time(NULL));
   blkType = rand() % MAX_BLK_TYPES;
 
+
   Matrix *iScreen = new Matrix((int *) arrayScreen, ARRAY_DY, ARRAY_DX);
   Matrix *currBlk = setofBlockObjects[blkType][0];
   Matrix *tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
@@ -241,6 +276,7 @@ int main(int argc, char *argv[]) {
   oScreen->paste(tempBlk2, top, left);
   delete tempBlk2;
   drawScreen(oScreen, SCREEN_DW); //테트리스 블럭출현
+
   delete oScreen;
 
   while ((key = getch()) != 'q') {
@@ -248,6 +284,7 @@ int main(int argc, char *argv[]) {
       case 'a': left--; break; //tempblk free했는데 어케 left?
       case 'd': left++; break;
       case 's': top++; break;
+      //수정필요 돌릴 때 넘어가지 않게
       case 'w': 
         idxBlockDegree = (idxBlockDegree + 1) % 4;
         currBlk = setofBlockObjects[blkType][idxBlockDegree];
@@ -255,45 +292,64 @@ int main(int argc, char *argv[]) {
       case ' ': 
         cout <<"space" <<endl;
         while(1){
-          top++;
+          top++; //스페이스 키 누르면 블록이 바닥까지 떨어지게
           tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
           tempBlk2 = tempBlk->add(currBlk);
-          cout <<"top++" <<endl;
+          
+          //블록이 1(바닥이나 타 블록)과 충돌하면
           if (tempBlk2->anyGreaterThan(1)){
             cout <<"greater" <<endl;
-            top--;
+            top--; //(사후충돌처리) 위로 1 올리기
             tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
             tempBlk2 = tempBlk->add(currBlk);
-            oScreen->paste(tempBlk2, top, left);
-            //delete tempBlk2;
+            iScreen->paste(tempBlk2, top, left); //기본 배경에 바닥에 떨어진 블록 고정
+            delete tempBlk;
+            delete tempBlk2;
+            iScreen = deleteFullLines(iScreen, top, SCREEN_DW);
             break;
           }
         }
+        //새 블록 생성
         blkType = rand() % MAX_BLK_TYPES;
-        currBlk = setofBlockObjects[blkType][0];
+        currBlk = setofBlockObjects[blkType][0]; 
         top=0;
         break;
       default: cout << "wrong key input" << endl;
     }
     tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
     tempBlk2 = tempBlk->add(currBlk);
+    delete tempBlk;
+    //delete currBlk;
     if (tempBlk2->anyGreaterThan(1)){
       switch(key){
         case 'a': left++; break;
         case 'd': left--; break;
-        case 's': top--; break;
+        case 's': 
+          top--; 
+          tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
+          tempBlk2 = tempBlk->add(currBlk);
+          delete tempBlk;
+          delete currBlk;
+          iScreen->paste(tempBlk2, top, left);
+          delete tempBlk2;
+          blkType = rand() % MAX_BLK_TYPES;
+          currBlk = setofBlockObjects[blkType][0];
+          top=0;
+          break;
         case 'w': top--; break;
-        case ' ': top--; break;
+        case ' ': break;
       }
+
       tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
       tempBlk2 = tempBlk->add(currBlk);
+      delete tempBlk;
     }
-    delete tempBlk;
-
+    
     oScreen = new Matrix(iScreen);
     oScreen->paste(tempBlk2, top, left);
     delete tempBlk2;
     drawScreen(oScreen, SCREEN_DW);
+    cout<<"출력" <<endl;
     delete oScreen;
   }
   
@@ -309,6 +365,7 @@ int main(int argc, char *argv[]) {
       delete setofBlockObjects[i][j];
     }
   }  
+  //delete currBlk;
 
   cout << "(nAlloc, nFree) = (" << Matrix::get_nAlloc() << ',' << Matrix::get_nFree() << ")" << endl;  
   cout << "Program terminated!" << endl;
