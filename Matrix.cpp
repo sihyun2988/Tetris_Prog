@@ -151,7 +151,7 @@ bool Matrix::anyGreaterThan(int val) {
   for (int y = 0; y < dy; y++) {
     for (int x = 0; x < dx; x++) {
       if (array[y][x] > val)
-	return true;
+	      return true;
     }
   }
   return false;

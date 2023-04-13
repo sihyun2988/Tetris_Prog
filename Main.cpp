@@ -98,7 +98,7 @@ int T0D1[] = { 1, 1, 1, 1, -1 };
 int T0D2[] = { 1, 1, 1, 1, -1 };
 int T0D3[] = { 1, 1, 1, 1, -1 };
 
-//    ㅗ
+
 int T1D0[] = { 0, 1, 0, 1, 1, 1, 0, 0, 0, -1 };
 int T1D1[] = { 0, 1, 0, 0, 1, 1, 0, 1, 0, -1 };
 int T1D2[] = { 0, 0, 0, 1, 1, 1, 0, 1, 0, -1 };
@@ -151,7 +151,7 @@ void drawScreen(Matrix *screen, int wall_depth)
       if (array[y][x] == 0)
 	      cout << "□ ";
       else if (array[y][x] == 1)
-	      cout << "■ ";
+        cout << "■ ";
       else if (array[y][x] == 10)
 	      cout << "◈ ";
       else if (array[y][x] == 20)
@@ -173,33 +173,24 @@ void drawScreen(Matrix *screen, int wall_depth)
   }
 }
 
-Matrix *deleteFullLines(Matrix *screen, int top, int wall_depth){
+Matrix *deleteFullLines(Matrix *screen, int wall_depth){
   int dy = screen->get_dy();
   int dx = screen->get_dx();
-  int **array = screen->get_array();
   int dw = wall_depth;
-  //현재 떨어진 블록의 top부터 밑으로 내려가면서 FullLine check
-  for(int i=top; i<dy-dw; i++){
-    for(int j=dw; j<dx-dw; j++){
-      if(array[i][j] == 0){
-        cout << "안채워진 줄 발견" << endl;
-        break;
-      }
-      //다 채워진 줄 나오면 그 윗줄을 아랫줄에 덮어쓰기
-      if(j == dx - dw -1){//해당 줄의 끝까지 갔는지
-        for(int k=i; k >= 0; k--){
-          for(int p=dw; p<dx-dw; p++){
-            if(k==0) {
-              if(p=dx-dw-1) break;
-              array[k][j] = 0; 
-              cout<<"0행 0으로"<<endl;}
-            cout<<"delete" <<endl;
-            cout<<k<<p<<endl;
-            array[k][p] = array[k-1][p];
-          }
-        }
-      }
+  int FullLine_y;
+  Matrix *full_up_temp; //new Matrix();
+  Matrix *fullcheck_temp; //new Matrix();
+
+  for (int i=0; i<dy-dw; i++){
+    fullcheck_temp = screen->clip(i, dw, i+1, dx-dw);
+    if (fullcheck_temp->sum() == 10){
+      FullLine_y = i;
+      full_up_temp = screen->clip(0, 0, FullLine_y, dy);
+      screen->paste(full_up_temp, 1, 0);
+      delete full_up_temp;
+      
     } 
+    delete fullcheck_temp;
   }
   return screen;
 }
@@ -259,7 +250,7 @@ int main(int argc, char *argv[]) {
       setofBlockObjects[i][j] = new Matrix(setOfBlockArrays[i*4 + j], col, row);
     }
   }
-
+  
   //난수를 이용한 블럭타입 선택
   srand((unsigned int)time(NULL));
   blkType = rand() % MAX_BLK_TYPES;
@@ -269,77 +260,118 @@ int main(int argc, char *argv[]) {
   Matrix *currBlk = setofBlockObjects[blkType][0];
   Matrix *tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
   Matrix *tempBlk2 = tempBlk->add(currBlk);
-
   delete tempBlk;
-
+  
   Matrix *oScreen = new Matrix(iScreen);
   oScreen->paste(tempBlk2, top, left);
-  delete tempBlk2;
+  //delete tempBlk2;
   drawScreen(oScreen, SCREEN_DW); //테트리스 블럭출현
-
   delete oScreen;
-
+  
   while ((key = getch()) != 'q') {
     switch (key) {
-      case 'a': left--; break; //tempblk free했는데 어케 left?
+      case 'a': left--; break;
       case 'd': left++; break;
       case 's': top++; break;
-      //수정필요 돌릴 때 넘어가지 않게
       case 'w': 
         idxBlockDegree = (idxBlockDegree + 1) % 4;
         currBlk = setofBlockObjects[blkType][idxBlockDegree];
         break;
       case ' ': 
-        cout <<"space" <<endl;
         while(1){
           top++; //스페이스 키 누르면 블록이 바닥까지 떨어지게
+          delete tempBlk2;
           tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
           tempBlk2 = tempBlk->add(currBlk);
+          delete tempBlk;
           
           //블록이 1(바닥이나 타 블록)과 충돌하면
           if (tempBlk2->anyGreaterThan(1)){
-            cout <<"greater" <<endl;
+            cout<<top<<endl;
             top--; //(사후충돌처리) 위로 1 올리기
+            cout<<top<<endl;
+            if(top <= 0){
+              cout << "===========GAME OVER===========" << endl;
+              goto gameover;
+            }
+            delete tempBlk2;
             tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
             tempBlk2 = tempBlk->add(currBlk);
             iScreen->paste(tempBlk2, top, left); //기본 배경에 바닥에 떨어진 블록 고정
             delete tempBlk;
-            delete tempBlk2;
-            iScreen = deleteFullLines(iScreen, top, SCREEN_DW);
             break;
           }
         }
-        //새 블록 생성
+         //space-> 새 블록 생성
         blkType = rand() % MAX_BLK_TYPES;
-        currBlk = setofBlockObjects[blkType][0]; 
-        top=0;
+        currBlk = setofBlockObjects[blkType][0];
+        top=0; left=6;
+        //새 블록이 생성 시 다른 블록과 겹치면 게임 오버
+        delete tempBlk2;
+        tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
+        tempBlk2 = tempBlk->add(currBlk);
+        delete tempBlk;
+        
+        while(tempBlk2->anyGreaterThan(1)){
+          top--;
+          if(top < 0){
+            cout << "============GAME OVER============" << endl;
+            goto gameover;
+            }
+          
+          break;
+          }
         break;
       default: cout << "wrong key input" << endl;
     }
+    iScreen = deleteFullLines(iScreen, SCREEN_DW);
+    delete tempBlk2;
     tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
     tempBlk2 = tempBlk->add(currBlk);
     delete tempBlk;
-    //delete currBlk;
+
+    //블록이 충돌하면
     if (tempBlk2->anyGreaterThan(1)){
       switch(key){
         case 'a': left++; break;
         case 'd': left--; break;
         case 's': 
-          top--; 
+          top--;
+          if(top <= 0){
+            cout << "============GAME OVER============" << endl;
+            goto gameover;
+          }
+          delete tempBlk2;
           tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
           tempBlk2 = tempBlk->add(currBlk);
           delete tempBlk;
-          delete currBlk;
+          //바닥에 고정
           iScreen->paste(tempBlk2, top, left);
           delete tempBlk2;
+          
+          //new block
           blkType = rand() % MAX_BLK_TYPES;
           currBlk = setofBlockObjects[blkType][0];
-          top=0;
+          top=0; left=6;
+          tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
+          tempBlk2 = tempBlk->add(currBlk);
+          delete tempBlk;
+          while(tempBlk2->anyGreaterThan(1)){
+            if(top <= 0){
+              cout << "============GAME OVER============" << endl;
+              exit(1);
+              }
+            break;}
           break;
-        case 'w': top--; break;
+        case 'w': 
+          //회전 시에 옆 벽면과 겹치면
+          idxBlockDegree = (idxBlockDegree - 1) % 4;
+          currBlk = setofBlockObjects[blkType][idxBlockDegree];
+          break;
         case ' ': break;
       }
-
+      cout<<top<<endl;cout<<left<<endl;
+      delete tempBlk2;
       tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
       tempBlk2 = tempBlk->add(currBlk);
       delete tempBlk;
@@ -347,29 +379,24 @@ int main(int argc, char *argv[]) {
     
     oScreen = new Matrix(iScreen);
     oScreen->paste(tempBlk2, top, left);
-    delete tempBlk2;
     drawScreen(oScreen, SCREEN_DW);
-    cout<<"출력" <<endl;
     delete oScreen;
   }
   
+  gameover:
+    delete iScreen;
+    delete tempBlk2;
 
-  delete iScreen;
-  //delete currBlk;
-  //delete tempBlk;
-  //delete tempBlk2;
-  //delete oScreen;
-  //블럭 객체 free
-  for (int i=0; i<MAX_BLK_TYPES; i++){
-    for (int j=0; j<MAX_BLK_DEGREES; j++){
-      delete setofBlockObjects[i][j];
+    //블럭 객체 free
+    for (int i=0; i<MAX_BLK_TYPES; i++){
+      for (int j=0; j<MAX_BLK_DEGREES; j++){
+        delete setofBlockObjects[i][j];
+      }
     }
-  }  
-  //delete currBlk;
 
-  cout << "(nAlloc, nFree) = (" << Matrix::get_nAlloc() << ',' << Matrix::get_nFree() << ")" << endl;  
-  cout << "Program terminated!" << endl;
+    cout << "(nAlloc, nFree) = (" << Matrix::get_nAlloc() << ',' << Matrix::get_nFree() << ")" << endl;  
+    cout << "Program terminated!" << endl;
 
-  return 0;
+    return 0;
 }
 
