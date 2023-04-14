@@ -287,11 +287,8 @@ int main(int argc, char *argv[]) {
           
           //블록이 1(바닥이나 타 블록)과 충돌하면
           if (tempBlk2->anyGreaterThan(1)){
-            cout<<top<<endl;
             top--; //(사후충돌처리) 위로 1 올리기
-            cout<<top<<endl;
             if(top <= 0){
-              cout << "===========GAME OVER===========" << endl;
               goto gameover;
             }
             delete tempBlk2;
@@ -314,8 +311,7 @@ int main(int argc, char *argv[]) {
         
         while(tempBlk2->anyGreaterThan(1)){
           top--;
-          if(top < 0){
-            cout << "============GAME OVER============" << endl;
+          if(top <= 0){
             goto gameover;
             }
           
@@ -338,7 +334,6 @@ int main(int argc, char *argv[]) {
         case 's': 
           top--;
           if(top <= 0){
-            cout << "============GAME OVER============" << endl;
             goto gameover;
           }
           delete tempBlk2;
@@ -358,14 +353,13 @@ int main(int argc, char *argv[]) {
           delete tempBlk;
           while(tempBlk2->anyGreaterThan(1)){
             if(top <= 0){
-              cout << "============GAME OVER============" << endl;
-              exit(1);
+              goto gameover;
               }
             break;}
           break;
         case 'w': 
           //회전 시에 옆 벽면과 겹치면
-          idxBlockDegree = (idxBlockDegree - 1) % 4;
+          idxBlockDegree = (idxBlockDegree +3) % 4;
           currBlk = setofBlockObjects[blkType][idxBlockDegree];
           break;
         case ' ': break;
@@ -384,6 +378,7 @@ int main(int argc, char *argv[]) {
   }
   
   gameover:
+    cout << "============GAME OVER============" << endl;
     delete iScreen;
     delete tempBlk2;
 
@@ -399,4 +394,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
