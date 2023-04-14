@@ -229,7 +229,6 @@ int main(int argc, char *argv[]) {
   int blkType;
   int idxBlockDegree;
   int top = 0, left = 5;
-  bool TouchDown = false;
 
   /*
   Matrix A((int*) arrayBlk, 3, 3);
@@ -289,16 +288,39 @@ int main(int argc, char *argv[]) {
           //블록이 1(바닥이나 타 블록)과 충돌하면
           if (tempBlk2->anyGreaterThan(1)){
             top--; //(사후충돌처리) 위로 1 올리기
-            if(top < 0){
+            if(top <= 0){
               goto gameover;
             }
-            TouchDown = true;
+            delete tempBlk2;
+            tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
+            tempBlk2 = tempBlk->add(currBlk);
+            iScreen->paste(tempBlk2, top, left); //기본 배경에 바닥에 떨어진 블록 고정
+            delete tempBlk;
             break;
           }
-        }          
+        }
+         //space-> 새 블록 생성
+        blkType = rand() % MAX_BLK_TYPES;
+        currBlk = setofBlockObjects[blkType][0];
+        top=0; left=6;
+        //새 블록이 생성 시 다른 블록과 겹치면 게임 오버
+        delete tempBlk2;
+        tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
+        tempBlk2 = tempBlk->add(currBlk);
+        delete tempBlk;
+        
+        while(tempBlk2->anyGreaterThan(1)){
+          top--;
+          if(top <= 0){
+            goto gameover;
+            }
+          
+          break;
+          }
         break;
       default: cout << "wrong key input" << endl;
     }
+    iScreen = deleteFullLines(iScreen, SCREEN_DW);
     delete tempBlk2;
     tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
     tempBlk2 = tempBlk->add(currBlk);
@@ -311,10 +333,29 @@ int main(int argc, char *argv[]) {
         case 'd': left--; break;
         case 's': 
           top--;
-          if(top < 0){
+          if(top <= 0){
             goto gameover;
           }
-          TouchDown = true;
+          delete tempBlk2;
+          tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
+          tempBlk2 = tempBlk->add(currBlk);
+          delete tempBlk;
+          //바닥에 고정
+          iScreen->paste(tempBlk2, top, left);
+          delete tempBlk2;
+          
+          //new block
+          blkType = rand() % MAX_BLK_TYPES;
+          currBlk = setofBlockObjects[blkType][0];
+          top=0; left=6;
+          tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
+          tempBlk2 = tempBlk->add(currBlk);
+          delete tempBlk;
+          while(tempBlk2->anyGreaterThan(1)){
+            if(top <= 0){
+              goto gameover;
+              }
+            break;}
           break;
         case 'w': 
           //회전 시에 옆 벽면과 겹치면
@@ -323,37 +364,12 @@ int main(int argc, char *argv[]) {
           break;
         case ' ': break;
       }
+      cout<<top<<endl;cout<<left<<endl;
       delete tempBlk2;
       tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
       tempBlk2 = tempBlk->add(currBlk);
       delete tempBlk;
     }
-    
-    //s, space키 바닥 닿았을 시 새로운 블럭 생성
-    if (TouchDown == true){
-      delete tempBlk2;
-      tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
-      tempBlk2 = tempBlk->add(currBlk);
-      delete tempBlk;
-      //바닥에 고정
-      iScreen->paste(tempBlk2, top, left);
-      delete tempBlk2;
-      //new block
-      iScreen = deleteFullLines(iScreen, SCREEN_DW);
-      blkType = rand() % MAX_BLK_TYPES;
-      currBlk = setofBlockObjects[blkType][0];
-      top=0; left=6;
-      tempBlk = iScreen->clip(top, left, top + currBlk->get_dy(), left + currBlk->get_dx());
-      tempBlk2 = tempBlk->add(currBlk);
-      delete tempBlk;
-      while(tempBlk2->anyGreaterThan(1)){
-        if(top <= 0){
-          goto gameover;
-          }
-        break;
-      }
-    }
-
     
     oScreen = new Matrix(iScreen);
     oScreen->paste(tempBlk2, top, left);
@@ -362,7 +378,7 @@ int main(int argc, char *argv[]) {
   }
   
   gameover:
-    cout << "===========GAME OVER===========" << endl;
+    cout << "============GAME OVER============" << endl;
     delete iScreen;
     delete tempBlk2;
 
